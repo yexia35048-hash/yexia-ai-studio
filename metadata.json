@@ -1,0 +1,5 @@
+{
+  "name": "Sudoku Master",
+  "description": "A classic Sudoku game with multiple difficulties, highlighting, and a sleek UI.",
+  "requestFramePermissions": []
+}
