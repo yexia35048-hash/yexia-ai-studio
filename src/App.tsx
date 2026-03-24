@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { generateSudoku, checkWin, getConflicts, Board } from './utils/sudoku';
-import { RefreshCw, CheckCircle2, Lightbulb, Eraser } from 'lucide-react';
+import { RefreshCw, CheckCircle2, Lightbulb, Eraser, Pencil } from 'lucide-react';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -12,6 +12,8 @@ export default function App() {
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [isWon, setIsWon] = useState(false);
   const [conflicts, setConflicts] = useState<{row: number, col: number}[]>([]);
+  const [notesMode, setNotesMode] = useState(false);
+  const [notes, setNotes] = useState<number[][][]>(Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => [])));
 
   const startNewGame = useCallback(() => {
     const { puzzle, solution: newSolution } = generateSudoku(difficulty);
@@ -21,6 +23,7 @@ export default function App() {
     setSelectedCell(null);
     setIsWon(false);
     setConflicts([]);
+    setNotes(Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => [])));
   }, [difficulty]);
 
   useEffect(() => {
@@ -41,12 +44,66 @@ export default function App() {
     const [r, c] = selectedCell;
     if (initialBoard[r][c] !== 0) return; // Cannot edit initial cells
 
-    setBoard(prev => {
-      const newBoard = prev.map(row => [...row]);
-      newBoard[r][c] = num;
-      return newBoard;
-    });
-  }, [selectedCell, initialBoard, isWon]);
+    if (num === 0) {
+      // Eraser logic
+      if (board[r][c] !== 0) {
+        setBoard(prev => {
+          const newBoard = prev.map(row => [...row]);
+          newBoard[r][c] = 0;
+          return newBoard;
+        });
+      } else {
+        setNotes(prev => {
+          const newNotes = prev.map(row => row.map(cell => [...cell]));
+          newNotes[r][c] = [];
+          return newNotes;
+        });
+      }
+      return;
+    }
+
+    if (notesMode) {
+      if (board[r][c] !== 0) return; // Can't add notes if cell is filled
+      // Toggle note
+      setNotes(prev => {
+        const newNotes = prev.map(row => row.map(cell => [...cell]));
+        const cellNotes = newNotes[r][c];
+        if (cellNotes.includes(num)) {
+          newNotes[r][c] = cellNotes.filter(n => n !== num);
+        } else {
+          newNotes[r][c].push(num);
+          newNotes[r][c].sort();
+        }
+        return newNotes;
+      });
+    } else {
+      // Normal input
+      setBoard(prev => {
+        const newBoard = prev.map(row => [...row]);
+        newBoard[r][c] = num;
+        return newBoard;
+      });
+      
+      // Auto-remove this number from notes in the same row, col, and block
+      setNotes(prev => {
+        const newNotes = prev.map(row => row.map(cell => [...cell]));
+        // Remove from row and col
+        for (let i = 0; i < 9; i++) {
+          newNotes[r][i] = newNotes[r][i].filter(n => n !== num);
+          newNotes[i][c] = newNotes[i][c].filter(n => n !== num);
+        }
+        // Remove from block
+        const startRow = r - (r % 3);
+        const startCol = c - (c % 3);
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            newNotes[startRow + i][startCol + j] = newNotes[startRow + i][startCol + j].filter(n => n !== num);
+          }
+        }
+        return newNotes;
+      });
+    }
+  }, [selectedCell, initialBoard, isWon, notesMode, board]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (isWon) return;
@@ -55,6 +112,8 @@ export default function App() {
       handleInput(parseInt(e.key));
     } else if (e.key === 'Backspace' || e.key === 'Delete') {
       handleInput(0);
+    } else if (e.key.toLowerCase() === 'n') {
+      setNotesMode(prev => !prev);
     } else if (selectedCell) {
       const [r, c] = selectedCell;
       if (e.key === 'ArrowUp') setSelectedCell([Math.max(0, r - 1), c]);
@@ -158,7 +217,7 @@ export default function App() {
                     key={`${r}-${c}`}
                     onClick={() => setSelectedCell([r, c])}
                     className={`
-                      flex items-center justify-center text-xl sm:text-2xl cursor-pointer transition-colors
+                      relative flex items-center justify-center text-xl sm:text-2xl cursor-pointer transition-colors
                       border-slate-300 border-r border-b
                       ${c === 2 || c === 5 ? 'border-r-slate-800 border-r-2' : ''}
                       ${r === 2 || r === 5 ? 'border-b-slate-800 border-b-2' : ''}
@@ -168,7 +227,19 @@ export default function App() {
                       ${textClass}
                     `}
                   >
-                    {cell !== 0 ? cell : ''}
+                    {cell !== 0 ? (
+                      cell
+                    ) : notes[r][c].length > 0 ? (
+                      <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 p-0.5 pointer-events-none">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                          <div key={n} className="flex items-center justify-center text-[8px] sm:text-[10px] leading-none text-slate-500 font-medium">
+                            {notes[r][c].includes(n) ? n : ''}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      ''
+                    )}
                   </div>
                 );
               })
@@ -199,21 +270,32 @@ export default function App() {
         </div>
 
         {/* Controls */}
-        <div className="w-full flex gap-4">
+        <div className="w-full flex gap-2 sm:gap-4">
           <button
             onClick={startNewGame}
-            className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white py-3 px-4 rounded-xl font-medium hover:bg-slate-800 active:bg-slate-950 transition-colors shadow-sm"
+            className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 bg-slate-900 text-white py-2 sm:py-3 px-2 rounded-xl font-medium hover:bg-slate-800 active:bg-slate-950 transition-colors shadow-sm text-sm sm:text-base"
           >
-            <RefreshCw className="w-5 h-5" />
-            New Game
+            <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>New</span>
+          </button>
+          <button
+            onClick={() => setNotesMode(!notesMode)}
+            className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 rounded-xl font-medium transition-colors shadow-sm text-sm sm:text-base ${
+              notesMode 
+                ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 active:bg-slate-100'
+            }`}
+          >
+            <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Notes {notesMode ? 'ON' : 'OFF'}</span>
           </button>
           <button
             onClick={solveGame}
             disabled={isWon}
-            className="flex-1 flex items-center justify-center gap-2 bg-white text-slate-700 border border-slate-200 py-3 px-4 rounded-xl font-medium hover:bg-slate-50 active:bg-slate-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 bg-white text-slate-700 border border-slate-200 py-2 sm:py-3 px-2 rounded-xl font-medium hover:bg-slate-50 active:bg-slate-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
-            <Lightbulb className="w-5 h-5" />
-            Solve
+            <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Solve</span>
           </button>
         </div>
 
