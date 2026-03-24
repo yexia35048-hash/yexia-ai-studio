@@ -3,6 +3,6 @@
   "target": {
     "namespace": "android_app",
     "package_name": "app.netlify.enchanting_flan_271421.twa",
-    "sha256_cert_fingerprints": ["45:88:6A:ED:43:18:96:30:0C:3E:12:5E:52:4E:73:1B:3C:7E:AB:D8:3D:E3:71:03:DD:60:28:35:9A:4F:A0:50"]
+    "sha256_cert_fingerprints": ["C0:7E:3B:F4:5B:BD:05:62:78:AD:AB:91:A3:15:A1:A9:96:54:5F:0B:44:99:5F:8E:52:C6:61:0C:AE:C1:5D:41"]
   }
 }]
