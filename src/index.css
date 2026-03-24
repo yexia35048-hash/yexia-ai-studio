@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+body {
+  /* Prevent text selection */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Prevent long-press popup menus on mobile */
+  -webkit-touch-callout: none;
+  /* Prevent pull-to-refresh on mobile browsers */
+  overscroll-behavior-y: none;
+  /* Remove blue highlight when tapping buttons on Android */
+  -webkit-tap-highlight-color: transparent;
+}
