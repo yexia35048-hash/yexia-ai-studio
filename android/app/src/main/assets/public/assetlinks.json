@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.netlify.enchanting_flan_271421.twa",
+    "sha256_cert_fingerprints": ["C0:7E:3B:F4:5B:BD:05:62:78:AD:AB:91:A3:15:A1:A9:96:54:5F:0B:44:99:5F:8E:52:C6:61:0C:AE:C1:5D:41"]
+  }
+}]

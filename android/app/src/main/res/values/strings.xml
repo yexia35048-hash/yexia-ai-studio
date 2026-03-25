@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sudoku Master</string>
+    <string name="title_activity_main">Sudoku Master</string>
+    <string name="package_name">app.netlify.enchanting_flan_271421.twa</string>
+    <string name="custom_url_scheme">app.netlify.enchanting_flan_271421.twa</string>
+</resources>
