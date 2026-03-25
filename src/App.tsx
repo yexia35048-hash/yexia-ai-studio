@@ -14,6 +14,7 @@ export default function App() {
   const [conflicts, setConflicts] = useState<{row: number, col: number}[]>([]);
   const [notesMode, setNotesMode] = useState(false);
   const [notes, setNotes] = useState<number[][][]>(Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => [])));
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const startNewGame = useCallback(() => {
     const { puzzle, solution: newSolution } = generateSudoku(difficulty);
@@ -27,8 +28,40 @@ export default function App() {
   }, [difficulty]);
 
   useEffect(() => {
+    const saved = localStorage.getItem('sudoku-save-game');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        setBoard(data.board);
+        setInitialBoard(data.initialBoard);
+        setSolution(data.solution);
+        setDifficulty(data.difficulty);
+        setNotes(data.notes);
+        setIsWon(data.isWon || false);
+        setIsInitialized(true);
+        return;
+      } catch (e) {
+        console.error("Failed to load saved game", e);
+      }
+    }
     startNewGame();
-  }, [startNewGame]);
+    setIsInitialized(true);
+  }, []);
+
+  // Auto-save whenever board or notes change
+  useEffect(() => {
+    if (!isInitialized || board.length === 0) return;
+    
+    const saveData = {
+      board,
+      initialBoard,
+      solution,
+      difficulty,
+      notes,
+      isWon
+    };
+    localStorage.setItem('sudoku-save-game', JSON.stringify(saveData));
+  }, [board, initialBoard, solution, difficulty, notes, isWon, isInitialized]);
 
   useEffect(() => {
     if (board.length > 0) {
